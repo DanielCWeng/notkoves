@@ -20,13 +20,16 @@ notkoves path/to/photo-folder
 The first run downloads MediaPipe's face landmark model (~3.6 MB) to `~/.cache/notkoves/`. The report opens in your browser and is saved as `notkoves-report.html` in the photo folder.
 
 ```
-notkoves PHOTOS [-o report.html] [--json] [--max-yaw 8] [--max-pitch 15]
+notkoves PHOTOS [-o report.html] [--json] [--pd MM] [--focal-35mm MM] [--mirrored]
+                [--max-yaw 8] [--max-pitch 15]
                 [--model face_landmarker.task] [--backend auto|tasks|legacy] [--no-open]
 ```
 
 `--json` also writes the full per-photo data, so you can track changes over months.
 
 **Photos without lens data** (sent through WhatsApp/Messenger, screenshots): pass the lens so camera distance and head tilt can still be estimated, e.g. `--focal-35mm 23` for an iPhone 12–15 front camera or `--focal-35mm 26` for the main rear camera. Original files (AirDrop, cable, iCloud export) keep this automatically.
+
+**Know your PD?** Pass it (`--pd 66`, from an optician's measurement). It replaces the average-iris assumption as the scale for every mm figure and the camera-distance estimate, with a correction for your eyes converging on the camera. The report also shows your implied iris diameter.
 
 **Front-camera selfies:** if *Settings → Camera → Mirror Front Camera* is on, your photos are mirror images; add `--mirrored` so left and right are reported the right way round. Front cameras are wide-angle and usually held at arm's length, which is the worst case for perspective distortion. The rear camera with zoom from ~1.5 m is much better.
 

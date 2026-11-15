@@ -134,3 +134,23 @@ def test_symmetry_pairs_are_true_mirrors():
             assert _PART[a] == b
     for i in L.MIDLINE:
         assert abs(_C[i, 0]) < 1e-6
+
+
+def test_pd_scaling_and_distance():
+    pts = project(dist=100.0)  # canonical units are cm -> 1 m away
+    f = face(pts)
+    f.photo.focal_35mm = 36.0  # f_px = max(W, H) = 1000, matching CAM
+    # canonical eye-centre distance in mm, treated as the "measured" PD
+    eye_c = np.linalg.norm(P._CANON[L.R_EYE_CONTOUR].mean(0) - P._CANON[L.L_EYE_CONTOUR].mean(0)) * 10
+    pd = eye_c / (1 - P.EYE_ROTATION_MM / 1000)  # so that photo_pd at 1 m == eye_c
+    po = P.estimate(f, pd_mm=pd)
+    # distance is to the eyes, which sit in front of the canonical origin
+    eye_z_cm = P._CANON[L.R_EYE_CONTOUR + L.L_EYE_CONTOUR, 2].mean()
+    assert po.distance_m == pytest.approx((100.0 - eye_z_cm) / 100, rel=0.01)
+    mm = M.mm_measurements(f, pd_mm=pd, distance_m=po.distance_m)
+    assert mm["Interpupillary distance (in photo)"] == pytest.approx(eye_c, rel=0.01)
+
+
+def test_photo_pd_vergence():
+    assert P.photo_pd(66, 1.0) == pytest.approx(66 - 0.792, abs=1e-6)
+    assert P.photo_pd(66, 1.0) < P.photo_pd(66, 2.0) < 66

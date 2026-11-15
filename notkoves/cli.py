@@ -32,6 +32,9 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--focal-35mm", type=float, default=None,
                     help="lens (35mm-equivalent focal length) to assume for photos without EXIF, "
                          "e.g. 23 for an iPhone 12-15 front camera, 26 for the main rear camera")
+    ap.add_argument("--pd", type=float, default=None,
+                    help="your measured pupillary distance in mm (e.g. from an optician); "
+                         "used as the scale for mm sizes and camera distance")
     ap.add_argument("--mirrored", action="store_true",
                     help="photos are mirror images (iPhone Settings > Camera > Mirror Front Camera on); "
                          "flips them so left/right are reported correctly")
@@ -52,7 +55,7 @@ def main(argv: list[str] | None = None) -> int:
         backend = "legacy" if (args.model is None and hasattr(mp, "solutions")) else "tasks"
     model = model_path(args.model) if backend == "tasks" else None
     results = A.run(args.photos, model, Gate(max_yaw=args.max_yaw, max_pitch=args.max_pitch),
-                    backend=backend, focal_35mm=args.focal_35mm, mirrored=args.mirrored)
+                    backend=backend, focal_35mm=args.focal_35mm, mirrored=args.mirrored, pd_mm=args.pd)
     agg = A.aggregate(results)
     R.render(results, agg, out)
     used = sum(r.used for r in results)

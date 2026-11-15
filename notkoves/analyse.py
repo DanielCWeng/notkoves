@@ -59,7 +59,7 @@ def stability(kind: str, values: list[float]) -> Summary:
 
 def run(folder: Path, model_file: Path | None, gate: P.Gate | None = None,
         backend: str = "tasks", focal_35mm: float | None = None,
-        mirrored: bool = False) -> list[PhotoResult]:
+        mirrored: bool = False, pd_mm: float | None = None) -> list[PhotoResult]:
     """focal_35mm: lens to assume when a photo has no EXIF focal length.
     mirrored: photos are mirror images (e.g. iPhone 'Mirror Front Camera' on)."""
     gate = gate or P.Gate()
@@ -85,7 +85,7 @@ def run(folder: Path, model_file: Path | None, gate: P.Gate | None = None,
                     "no face found (side profiles and tightly cropped faces aren't supported yet)"]))
                 continue
             r = PhotoResult(path, face, warnings=list(face.notes))
-            r.pose = P.estimate(face)
+            r.pose = P.estimate(face, pd_mm)
             bad, warn = gate.check(r.pose)
             r.rejected += bad
             r.warnings += warn
@@ -102,7 +102,7 @@ def run(folder: Path, model_file: Path | None, gate: P.Gate | None = None,
             else:
                 r.warnings.append("mirror pass failed; landmark-model bias not cancelled")
             r.symmetry = S.analyse(face, mface)
-            r.mm = M.mm_measurements(face)
+            r.mm = M.mm_measurements(face, pd_mm, r.pose.distance_m)
             results.append(r)
     return results
 

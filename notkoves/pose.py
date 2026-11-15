@@ -44,7 +44,25 @@ class Pose:
     distance_basis: str
 
 
-def estimate(face: Face) -> Pose:
+EYE_ROTATION_MM = 12.0   # pupil plane to eye's centre of rotation (approx.)
+
+
+def pupil_px(face: Face) -> float:
+    """Pixel distance between pupils (iris centres; eye centres as fallback)."""
+    p = face.pts
+    if face.iris_ok:
+        return float(np.linalg.norm(p[L.R_IRIS_CENTRE] - p[L.L_IRIS_CENTRE]))
+    return float(np.linalg.norm(p[L.R_EYE_CONTOUR].mean(0) - p[L.L_EYE_CONTOUR].mean(0)))
+
+
+def photo_pd(pd_mm: float, distance_m: float | None) -> float:
+    """PD as it appears in a photo: eyes converge on the camera, so pupils sit
+    closer together than a measured (distance) PD. ~0.8 mm less at 1 m."""
+    d = (distance_m or 1.2) * 1000
+    return pd_mm - EYE_ROTATION_MM * pd_mm / d
+
+
+def estimate(face: Face, pd_mm: float | None = None) -> Pose:
     p = face.pts
     w, h = face.size
     f_px = float(max(w, h))  # assumption when EXIF focal length is absent
@@ -69,7 +87,13 @@ def estimate(face: Face) -> Pose:
 
     # camera distance from a known physical size
     dist, basis = None, ""
-    if face.photo.focal_35mm:
+    if face.photo.focal_35mm and pd_mm:
+        ppx = pupil_px(face)
+        dist = None
+        for _ in range(3):  # converge the vergence correction
+            dist = f_px * photo_pd(pd_mm, dist) / ppx / 1000
+        basis = "your PD + EXIF focal length"
+    elif face.photo.focal_35mm:
         if face.iris_ok:
             iris_px = np.mean([
                 np.linalg.norm(p[L.R_IRIS_RING[0]] - p[L.R_IRIS_RING[2]]),

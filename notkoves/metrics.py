@@ -191,19 +191,36 @@ def compute(face: Face) -> dict[str, float]:
     return out
 
 
-def mm_measurements(face: Face) -> dict[str, float]:
-    """Approximate real-world sizes, only when iris landmarks are trustworthy."""
-    if not face.iris_ok:
-        return {}
+def mm_measurements(face: Face, pd_mm: float | None = None,
+                    distance_m: float | None = None) -> dict[str, float]:
+    """Approximate real-world sizes.
+
+    Scale comes from the user's measured PD if given (best), otherwise from
+    the average iris diameter (needs trustworthy iris landmarks).
+    """
+    from .pose import photo_pd, pupil_px
+
     p = normalise(face.pts)
-    iris_px = np.mean([_d(p, L.R_IRIS_RING[0], L.R_IRIS_RING[2]),
-                       _d(p, L.L_IRIS_RING[0], L.L_IRIS_RING[2])])
-    k = IRIS_DIAMETER_MM / iris_px
-    return {
-        "Interpupillary distance": _d(p, L.R_IRIS_CENTRE, L.L_IRIS_CENTRE) * k,
+    iris_px = (np.mean([_d(p, L.R_IRIS_RING[0], L.R_IRIS_RING[2]),
+                        _d(p, L.L_IRIS_RING[0], L.L_IRIS_RING[2])])
+               if face.iris_ok else None)
+    extra = {}
+    if pd_mm:
+        k = photo_pd(pd_mm, distance_m) / pupil_px(face)
+        if iris_px:
+            extra["Iris diameter (implied)"] = iris_px * k
+    elif iris_px:
+        k = IRIS_DIAMETER_MM / iris_px
+    else:
+        return {}
+    pupil = "Interpupillary distance (in photo)" if pd_mm else "Interpupillary distance"
+    out = {
+        pupil: pupil_px(face) * k,
         "Face width (side outline)": _d(p, L.R_ZYGION, L.L_ZYGION) * k,
         "Jaw width": _d(p, L.R_GONION, L.L_GONION) * k,
         "Nose width": _d(p, L.R_ALA, L.L_ALA) * k,
         "Mouth width": _d(p, L.R_CHEILION, L.L_CHEILION) * k,
         "Nasion to chin": _dy(p, L.NASION, L.MENTON) * k,
     }
+    out.update(extra)
+    return out

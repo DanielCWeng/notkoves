@@ -186,7 +186,7 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
 
     parts.append("<h3>Side-to-side differences</h3><table><tr><th>Measure</th>"
                  "<th>Mean (% eye distance)</th><th>Consistent across photos?</th></tr>")
-    scale = agg["mm"].get("Interpupillary distance")
+    scale = agg["mm"].get("Interpupillary distance") or agg["mm"].get("Interpupillary distance (in photo)")
     for k, s in agg["side"].items():
         consistent = "–"
         if s.n >= 3 and not math.isnan(s.sd):
@@ -202,8 +202,15 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
                  "(McAvinchey et al., 2014).</p>")
 
     if agg["mm"]:
-        parts.append("<h2>Approximate sizes</h2><p class='what'>Scaled from your iris (adult average "
-                     "11.7 mm, SD ~0.5 mm), so expect ±5% error on top of landmark error.</p>"
+        if any("implied" in k for k in agg["mm"]) or any("in photo" in k for k in agg["mm"]):
+            basis = ("Scaled from your measured PD, corrected for your eyes converging on the camera "
+                     "(pupils sit slightly closer in a photo). Error is mostly landmark placement, "
+                     "typically 1–3 mm.")
+        else:
+            basis = ("Scaled from your iris (adult average 11.7 mm, SD ~0.5 mm), so expect ±5% error "
+                     "on top of landmark error. Pass <code>--pd</code> with your measured PD for a "
+                     "real scale.")
+        parts.append(f"<h2>Approximate sizes</h2><p class='what'>{basis}</p>"
                      "<table><tr><th>Measure</th><th>Size</th><th>Stability</th></tr>")
         for k, s in agg["mm"].items():
             parts.append(f"<tr><td>{E(k)}</td><td class='num'>{_fmt(s.mean, 'mm')}</td><td>{_tag(s.stability)}</td></tr>")

@@ -127,6 +127,19 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
         parts.append("<div class='note warn'><b>Fewer than 3 usable photos.</b> You can't tell a real "
                      "feature from photo noise with one or two images. Add 5–10 photos (see the "
                      "photo guide at the bottom).</div>")
+    dists = [r.pose.distance_m for r in results if r.pose and r.pose.distance_m]
+    if dists and min(dists) < 0.9:
+        near = sum(d < 0.9 for d in dists)
+        parts.append(f"<div class='note warn'><b>{near} of {len(dists)} photos were taken from closer than "
+                     f"0.9 m</b> (closest ≈{min(dists):.2f} m). At that range perspective enlarges the nose "
+                     "and centre of the face and shrinks the cheeks and jaw, so nose-, mouth- and "
+                     "width-based ratios are biased. Retake from ~1.5 m with the rear camera at 2–3× "
+                     "zoom.</div>")
+    elif used and not dists:
+        parts.append("<div class='note warn'><b>Camera distance unknown.</b> These photos carry no lens "
+                     "data (messaging apps and screenshots strip it). Re-run with "
+                     "<code>--focal-35mm</code> (e.g. 23 for a recent iPhone front camera) or use the "
+                     "original files.</div>")
     parts.append("<div class='note'>This report <b>measures</b>; it doesn't <b>judge</b>. There's no "
                  "attractiveness score, on purpose. Reference values are classic canons or published "
                  "means, shown for context, not targets. The <i>stability</i> column tells you whether "
@@ -205,7 +218,7 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
         img = f"<img src='{overlay(r)}' alt=''>" if r.face is not None else ""
         pose = ""
         if r.pose:
-            d = f", camera ≈{r.pose.distance_m:.1f} m" if r.pose.distance_m else ""
+            d = f", camera ≈{r.pose.distance_m:.2f} m" if r.pose.distance_m else ""
             pose = (f"<div class='what'>turn {r.pose.yaw:+.0f}°, tilt {r.pose.pitch:+.0f}°, "
                     f"roll {r.pose.roll:+.0f}°{d}</div>")
         status = "<b style='color:var(--acc)'>used</b>" if r.used else \

@@ -81,6 +81,8 @@ def estimate(face: Face) -> Pose:
             zyg_px = np.linalg.norm(p[L.R_ZYGION] - p[L.L_ZYGION])
             dist = f_px * AVG_BIZYGOMATIC_MM / zyg_px / 1000
             basis = "average face width + EXIF focal length (±10%)"
+    if basis and face.photo.focal_assumed:
+        basis = basis.replace("EXIF focal length", "assumed focal length")
     return Pose(yaw=yaw, pitch=pitch, roll=roll, distance_m=dist, distance_basis=basis)
 
 
@@ -114,5 +116,6 @@ class Gate:
                 "the nose and shrinks the face edges. Shoot from ~1.5 m with zoom."
             )
         if pose.distance_m is None:
-            warn.append("no EXIF focal length, so camera distance can't be checked")
+            warn.append("no EXIF focal length, so camera distance can't be checked "
+                        "(pass --focal-35mm, e.g. 23 for recent iPhone front cameras)")
         return bad, warn

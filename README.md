@@ -26,6 +26,10 @@ notkoves PHOTOS [-o report.html] [--json] [--max-yaw 8] [--max-pitch 15]
 
 `--json` also writes the full per-photo data, so you can track changes over months.
 
+**Photos without lens data** (sent through WhatsApp/Messenger, screenshots): pass the lens so camera distance and head tilt can still be estimated, e.g. `--focal-35mm 23` for an iPhone 12–15 front camera or `--focal-35mm 26` for the main rear camera. Original files (AirDrop, cable, iCloud export) keep this automatically.
+
+**Front-camera selfies:** if *Settings → Camera → Mirror Front Camera* is on, your photos are mirror images; add `--mirrored` so left and right are reported the right way round. Front cameras are wide-angle and usually held at arm's length, which is the worst case for perspective distortion. The rear camera with zoom from ~1.5 m is much better.
+
 ## Taking photos that measure well
 
 Photo technique matters more than any algorithm.

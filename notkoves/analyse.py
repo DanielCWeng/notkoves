@@ -58,7 +58,10 @@ def stability(kind: str, values: list[float]) -> Summary:
 
 
 def run(folder: Path, model_file: Path | None, gate: P.Gate | None = None,
-        backend: str = "tasks") -> list[PhotoResult]:
+        backend: str = "tasks", focal_35mm: float | None = None,
+        mirrored: bool = False) -> list[PhotoResult]:
+    """focal_35mm: lens to assume when a photo has no EXIF focal length.
+    mirrored: photos are mirror images (e.g. iPhone 'Mirror Front Camera' on)."""
     gate = gate or P.Gate()
     results: list[PhotoResult] = []
     paths = list_images(folder)
@@ -68,12 +71,18 @@ def run(folder: Path, model_file: Path | None, gate: P.Gate | None = None,
         for path in paths:
             try:
                 photo = load_photo(path)
+                if photo.focal_35mm is None and focal_35mm:
+                    photo.focal_35mm = focal_35mm
+                    photo.focal_assumed = True
+                if mirrored:
+                    photo.rgb = np.ascontiguousarray(photo.rgb[:, ::-1])
             except Exception as exc:
                 results.append(PhotoResult(path, None, rejected=[f"could not open: {exc}"]))
                 continue
             face = det.detect(photo)
             if face is None:
-                results.append(PhotoResult(path, None, rejected=["no face found"]))
+                results.append(PhotoResult(path, None, rejected=[
+                    "no face found (side profiles and tightly cropped faces aren't supported yet)"]))
                 continue
             r = PhotoResult(path, face, warnings=list(face.notes))
             r.pose = P.estimate(face)
@@ -83,6 +92,7 @@ def run(folder: Path, model_file: Path | None, gate: P.Gate | None = None,
             # Analyse the mirror image too: averaging cancels any left/right
             # bias in the landmark model itself.
             mphoto = Photo(path, np.ascontiguousarray(photo.rgb[:, ::-1]), photo.focal_35mm)
+            mphoto.focal_assumed = photo.focal_assumed
             mface = det.detect(mphoto)
             r.metrics = M.compute(face)
             if mface is not None:

@@ -26,6 +26,7 @@ class Photo:
     path: Path
     rgb: np.ndarray                    # H x W x 3 uint8, EXIF-rotated
     focal_35mm: float | None = None    # EXIF FocalLengthIn35mmFilm, if present
+    focal_assumed: bool = False        # True if supplied by --focal-35mm, not EXIF
 
 
 @dataclass

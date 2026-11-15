@@ -102,7 +102,10 @@ def run(folder: Path, model_file: Path | None, gate: P.Gate | None = None,
             else:
                 r.warnings.append("mirror pass failed; landmark-model bias not cancelled")
             r.symmetry = S.analyse(face, mface)
-            r.mm = M.mm_measurements(face, pd_mm, r.pose.distance_m)
+            # an assumed lens can't be trusted for distance (crops/screenshots break it),
+            # so don't let it drive the vergence correction
+            trust_d = r.pose.distance_m if not photo.focal_assumed else None
+            r.mm = M.mm_measurements(face, pd_mm, trust_d)
             results.append(r)
     return results
 

@@ -128,6 +128,18 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
                      "feature from photo noise with one or two images. Add 5–10 photos (see the "
                      "photo guide at the bottom).</div>")
     dists = [r.pose.distance_m for r in results if r.pose and r.pose.distance_m]
+    assumed = any(r.face is not None and r.face.photo.focal_assumed for r in results)
+    if assumed and dists:
+        # crops/screenshots break the distance estimate; test it against the photos themselves
+        idx = [r.metrics.get("facial_index") for r in used if r.pose and r.pose.distance_m]
+        ds = [r.pose.distance_m for r in used if r.pose and r.pose.distance_m]
+        if len(ds) >= 2 and max(ds) / min(ds) > 1.6 and np.nanstd(idx) / np.nanmean(idx) < 0.04:
+            parts.append("<div class='note warn'><b>Distance estimates don't add up.</b> They vary "
+                         f"{min(ds):.2f}–{max(ds):.2f} m, but the face's width ratios barely change between "
+                         "photos, which wouldn't happen at genuinely different distances. The photos are "
+                         "probably cropped, zoomed or screenshots, which breaks distance estimation when "
+                         "the lens is assumed. Use the original, uncropped files.</div>")
+            dists = []
     if dists and min(dists) < 0.9:
         near = sum(d < 0.9 for d in dists)
         parts.append(f"<div class='note warn'><b>{near} of {len(dists)} photos were taken from closer than "
@@ -135,7 +147,7 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
                      "and centre of the face and shrinks the cheeks and jaw, so nose-, mouth- and "
                      "width-based ratios are biased. Retake from ~1.5 m with the rear camera at 2–3× "
                      "zoom.</div>")
-    elif used and not dists:
+    elif used and not dists and not assumed:
         parts.append("<div class='note warn'><b>Camera distance unknown.</b> These photos carry no lens "
                      "data (messaging apps and screenshots strip it). Re-run with "
                      "<code>--focal-35mm</code> (e.g. 23 for a recent iPhone front camera) or use the "
@@ -225,7 +237,11 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
         img = f"<img src='{overlay(r)}' alt=''>" if r.face is not None else ""
         pose = ""
         if r.pose:
-            d = f", camera ≈{r.pose.distance_m:.2f} m" if r.pose.distance_m else ""
+            d = ""
+            if r.pose.distance_m:
+                d = f", camera ≈{r.pose.distance_m:.2f} m"
+                if r.face.photo.focal_assumed:
+                    d += " (assumed lens)"
             pose = (f"<div class='what'>turn {r.pose.yaw:+.0f}°, tilt {r.pose.pitch:+.0f}°, "
                     f"roll {r.pose.roll:+.0f}°{d}</div>")
         status = "<b style='color:var(--acc)'>used</b>" if r.used else \

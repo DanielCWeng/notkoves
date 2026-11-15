@@ -1,0 +1,19 @@
+# your face stays on your machine
+photos/
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.heif
+*.webp
+notkoves-report*.html
+notkoves-report*.json
+*.task
+
+__pycache__/
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+build/
+dist/

@@ -45,7 +45,7 @@ L_BROW_IN, L_BROW_PEAK, L_BROW_OUT = 336, 334, 300
 # --- Nose / mouth / face outline ----------------------------------------------
 R_ALA, L_ALA = 129, 358       # outer nostril wings (approximate alare)
 R_CHEILION, L_CHEILION = 61, 291  # mouth corners
-R_ZYGION, L_ZYGION = 234, 454     # widest point of the face outline (cheekbones)
+R_ZYGION, L_ZYGION = 234, 454     # widest mesh outline points, near the ears (wider than true bizygomatic)
 R_GONION, L_GONION = 172, 397     # jaw angle (approximate; weak on soft jawlines)
 
 # --- Bilateral pairs for symmetry, grouped by region ---------------------------

@@ -17,7 +17,7 @@ from PIL import Image
 from . import __version__
 from . import landmark_ids as L
 from .analyse import PhotoResult, Summary
-from .metrics import METRICS
+from .metrics import METRICS, baseline
 
 E = html.escape
 
@@ -153,7 +153,9 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
                      "original files.</div>")
     parts.append("<div class='note'>This report <b>measures</b>; it doesn't <b>judge</b>. There's no "
                  "attractiveness score, on purpose. Reference values are classic canons or published "
-                 "means, shown for context, not targets. The <i>stability</i> column tells you whether "
+                 "means, shown for context, not targets. The <i>vs average face</i> column compares you with "
+                 "MediaPipe's canonical face measured with exactly the same landmarks, which cancels "
+                 "landmark-placement bias; it's a neutral model face, not a demographic average. The <i>stability</i> column tells you whether "
                  "a number held up across your photos: if it's noisy, it's mostly measuring the "
                  "camera, not your face.</div>")
 
@@ -165,12 +167,20 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
             if group is not None:
                 parts.append("</table>")
             group = m.group
-            parts.append(f"<h3>{E(group)}</h3><table><tr><th style='width:22%'>Metric</th>"
-                         "<th style='width:16%'>You</th><th style='width:11%'>Stability</th>"
-                         "<th>What it is · reference</th></tr>")
+            parts.append(f"<h3>{E(group)}</h3><table><tr><th style='width:20%'>Metric</th>"
+                         "<th style='width:14%'>You</th><th style='width:14%'>vs average face</th>"
+                         "<th style='width:10%'>Stability</th><th>What it is · reference</th></tr>")
         s = agg["metrics"][m.key]
+        b = baseline().get(m.key, float("nan"))
+        if math.isnan(s.mean) or math.isnan(b):
+            vs = "–"
+        elif m.kind == "angle":
+            vs = f"{s.mean - b:+.1f}° <span class='what'>(avg {b:+.1f}°)</span>"
+        else:
+            vs = f"{(s.mean / b - 1) * 100:+.0f}% <span class='what'>(avg {_fmt(b)})</span>"
         parts.append(f"<tr><td><b>{E(m.name)}</b></td>"
                      f"<td class='num'>{_fmt(s.mean, m.kind)} <span class='what'>{_sd(s, m.kind)}</span></td>"
+                     f"<td class='num'>{vs}</td>"
                      f"<td>{_tag(s.stability)}</td>"
                      f"<td>{E(m.what)}<div class='what'>{E(m.reference)}</div></td></tr>")
     parts.append("</table>")
@@ -281,6 +291,7 @@ def to_json(results: list[PhotoResult], agg: dict, out: Path) -> None:
         "date": dt.datetime.now().isoformat(timespec="seconds"),
         "summary": {
             "metrics": {k: summ(v) for k, v in agg["metrics"].items()},
+            "baseline_canonical_face": {k: _nan(v) for k, v in agg.get("baseline", {}).items()},
             "symmetry_overall_pct_iod": summ(agg["symmetry"]),
             "symmetry_regions_pct_iod": {k: summ(v) for k, v in agg["regions"].items()},
             "side_differences_pct_iod": {k: summ(v) for k, v in agg["side"].items()},

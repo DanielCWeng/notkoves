@@ -115,6 +115,7 @@ def aggregate(results: list[PhotoResult]) -> dict:
     out = {"metrics": {}, "symmetry": {}, "regions": {}, "side": {}, "mm": {}}
     for m in M.METRICS:
         out["metrics"][m.key] = stability(m.kind, [r.metrics[m.key] for r in used])
+    out["baseline"] = M.baseline()
     out["symmetry"] = stability("pct", [r.symmetry["overall"] for r in used])
     out["debiased"] = bool(used) and all(r.symmetry.get("debiased") for r in used)
     if used:

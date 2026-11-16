@@ -109,7 +109,7 @@ METRICS: list[Metric] = [
     # --- vertical proportions ---
     Metric("midface_lower", "Midface : lower face", "ratio", _midface_lower,
            "Nasion→subnasale height divided by subnasale→chin height (the middle and lower facial thirds).",
-           "Neoclassical canon = 1.00 (equal thirds). Most adults measure below 1, i.e. a slightly longer lower third.",
+           "Canon = 1.00 assumes the anatomical nasion; the mesh point sits lower, so even a neutral face reads ~0.74 here. Use the average-face column.",
            "Vertical proportions"),
     Metric("lip_chin", "Upper lip : lip-to-chin", "ratio", _lip_chin,
            "Subnasale→mouth line divided by mouth line→chin.",
@@ -124,7 +124,7 @@ METRICS: list[Metric] = [
     Metric("intercanthal_eye", "Eye spacing : eye width", "ratio",
            lambda p: _d(p, L.R_EN, L.L_EN) / _eye_width(p),
            "Gap between inner eye corners divided by the width of one eye.",
-           "Rule-of-fifths canon = 1.00.",
+           "Rule-of-fifths canon = 1.00, but mesh eye corners sit inside the true canthi, so a neutral face reads ~1.44. Use the average-face column.",
            "Horizontal proportions"),
     Metric("iod_face", "Eye distance : face width", "ratio",
            lambda p: _iod(p) / _d(p, L.R_ZYGION, L.L_ZYGION),
@@ -224,3 +224,38 @@ def mm_measurements(face: Face, pd_mm: float | None = None,
     }
     out.update(extra)
     return out
+
+
+# --- landmark-neutral baseline ------------------------------------------------
+
+_BASELINE: dict[str, float] | None = None
+
+
+def baseline() -> dict[str, float]:
+    """Every metric measured on MediaPipe's canonical face, using the same landmarks.
+
+    Classic canons assume anatomical landmarks the mesh can't reproduce exactly
+    (e.g. mesh 'nasion' sits below the anatomical nasion, mesh eye corners sit
+    inside the true canthi), so comparing raw values to canons mixes landmark
+    bias with anatomy. Comparing to the same measurement on the canonical face
+    cancels the landmark definitions. The canonical face is a single neutral
+    model, not a demographic average.
+    """
+    global _BASELINE
+    if _BASELINE is None:
+        import cv2
+
+        from .detect import Photo
+        from .pose import _CANON
+
+        W = 1000
+        cam = np.array([[W, 0, W / 2], [0, W, W / 2], [0, 0, 1]], float)
+        model = _CANON * np.array([1.0, -1.0, -1.0])
+        pts, _ = cv2.projectPoints(model, np.zeros(3), np.array([0, 0, 200.0]), cam, None)
+        pts = pts.reshape(-1, 2)
+        iris = np.vstack([np.repeat(pts[L.R_EYE_CONTOUR].mean(0, keepdims=True), 5, 0),
+                          np.repeat(pts[L.L_EYE_CONTOUR].mean(0, keepdims=True), 5, 0)])
+        full = np.vstack([pts, iris])
+        f = Face(photo=Photo(path=None, rgb=np.zeros((W, W, 3), np.uint8)), pts=full, z=np.zeros(len(full)))
+        _BASELINE = compute(f)
+    return _BASELINE

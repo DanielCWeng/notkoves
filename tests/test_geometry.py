@@ -154,3 +154,12 @@ def test_pd_scaling_and_distance():
 def test_photo_pd_vergence():
     assert P.photo_pd(66, 1.0) == pytest.approx(66 - 0.792, abs=1e-6)
     assert P.photo_pd(66, 1.0) < P.photo_pd(66, 2.0) < 66
+
+
+def test_baseline_matches_frontal_canonical():
+    b = M.baseline()
+    ref = M.compute(face(project(dist=200.0)))
+    for k, v in ref.items():
+        assert b[k] == pytest.approx(v, rel=1e-6, abs=1e-6), k
+    # mesh 'nasion' sits below anatomical nasion, so the neutral face reads ~0.74, not 1.0
+    assert 0.65 < b["midface_lower"] < 0.8

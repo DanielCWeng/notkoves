@@ -137,7 +137,7 @@ class Gate:
         if pose.distance_m is not None and pose.distance_m < self.min_distance_m:
             warn.append(
                 f"camera ~{pose.distance_m:.2f} m away: close-range perspective enlarges "
-                "the nose and shrinks the face edges. Shoot from ~1.5 m with zoom."
+                "the nose and shrinks the face edges. Shoot from 1.5–2 m (zoom not needed)."
             )
         if pose.distance_m is None:
             warn.append("no EXIF focal length, so camera distance can't be checked "

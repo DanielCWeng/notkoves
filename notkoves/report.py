@@ -145,8 +145,7 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
         parts.append(f"<div class='note warn'><b>{near} of {len(dists)} photos were taken from closer than "
                      f"0.9 m</b> (closest ≈{min(dists):.2f} m). At that range perspective enlarges the nose "
                      "and centre of the face and shrinks the cheeks and jaw, so nose-, mouth- and "
-                     "width-based ratios are biased. Retake from ~1.5 m with the rear camera at 2–3× "
-                     "zoom.</div>")
+                     "width-based ratios are biased. Retake from 1.5–2 m; zoom isn't needed.</div>")
     elif used and not dists and not assumed:
         parts.append("<div class='note warn'><b>Camera distance unknown.</b> These photos carry no lens "
                      "data (messaging apps and screenshots strip it). Re-run with "
@@ -254,7 +253,7 @@ def render(results: list[PhotoResult], agg: dict, out: Path) -> None:
     parts.append("""
 <h2>How to take photos that measure well</h2>
 <ul>
-<li><b>Distance beats everything.</b> Use the rear camera at 2–3× zoom from about 1.5 m (a timer or a friend). Arm's-length selfies enlarge the nose by roughly 30% (Ward et al., 2018).</li>
+<li><b>Distance beats everything.</b> Rear camera from 1.5–2 m, phone propped at eye height on a timer. Zoom isn't needed: the landmark model works at ~256 px, and a 12 MP photo still gives the face 600+ px at 2 m. Arm's-length selfies enlarge the nose by roughly 30% (Ward et al., 2018).</li>
 <li><b>Face the camera squarely</b>, lens at eye height, chin level. Photos turned more than 8° are rejected automatically.</li>
 <li><b>Neutral expression</b>, lips closed and relaxed, eyes open normally. Expression changes mouth, eye and brow metrics a lot.</li>
 <li><b>Even, frontal light</b> (facing a window). Hair off the forehead and away from the jaw outline.</li>

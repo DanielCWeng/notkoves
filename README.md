@@ -31,13 +31,13 @@ notkoves PHOTOS [-o report.html] [--json] [--pd MM] [--focal-35mm MM] [--mirrore
 
 **Know your PD?** Pass it (`--pd 66`, from an optician's measurement). It replaces the average-iris assumption as the scale for every mm figure and the camera-distance estimate, with a correction for your eyes converging on the camera. The report also shows your implied iris diameter.
 
-**Front-camera selfies:** if *Settings → Camera → Mirror Front Camera* is on, your photos are mirror images; add `--mirrored` so left and right are reported the right way round. Front cameras are wide-angle and usually held at arm's length, which is the worst case for perspective distortion. The rear camera with zoom from ~1.5 m is much better.
+**Front-camera selfies:** if *Settings → Camera → Mirror Front Camera* is on, your photos are mirror images; add `--mirrored` so left and right are reported the right way round. Front cameras are wide-angle and usually held at arm's length, which is the worst case for perspective distortion. The rear camera from 1.5–2 m is much better.
 
 ## Taking photos that measure well
 
 Photo technique matters more than any algorithm.
 
-1. **Distance.** Use the rear camera at 2–3× zoom from about 1.5 m (timer or a friend). Arm's-length selfies make the nose look roughly 30% bigger (Ward et al., 2018, *JAMA Facial Plastic Surgery*). notkoves estimates camera distance from EXIF and warns you when it's too close.
+1. **Distance.** Rear camera from 1.5–2 m, phone propped at eye height on a timer. Zoom isn't needed: the landmark model works at ~256 px, so even at 1× the face has plenty of pixels. Arm's-length selfies make the nose look roughly 30% bigger (Ward et al., 2018, *JAMA Facial Plastic Surgery*). notkoves estimates camera distance from EXIF and warns you when it's too close.
 2. **Square on.** Lens at eye height, chin level, facing the camera. Photos turned more than 8° or tilted more than 15° are rejected automatically.
 3. **Neutral face.** Lips closed and relaxed, eyes normally open, no smile.
 4. **Even light** from the front (face a window). Hair off the forehead and away from the jaw.
